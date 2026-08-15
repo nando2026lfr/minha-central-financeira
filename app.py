@@ -29,14 +29,14 @@ LISTA_CARTÕES = [
     "Outros Cartões"
 ]
 
-# --- MEMÓRIA DA APLICAÇÃO COM DADOS REAIS (SESSION STATE) ---
+# --- DADOS DETALHADOS REAIS (SESSION STATE) ---
 if 'lancamentos' not in st.session_state:
     st.session_state.lancamentos = pd.DataFrame([
-        # Receita Mensal Quinzenal (R$ 8.820,00 total)
+        # Receitas Quinzenais
         {"Data": "2026-08-01", "Descrição": "Adiantamento Quinzenal (1º Pagamento)", "Valor (R$)": 4410.00, "Tipo": "Entrada", "Forma": "Pix", "Categoria": "Renda Quinzenal"},
         {"Data": "2026-08-15", "Descrição": "Salário Quinzenal (2º Pagamento)", "Valor (R$)": 4410.00, "Tipo": "Entrada", "Forma": "Pix", "Categoria": "Renda Quinzenal"},
         
-        # Faturas Consolidadas dos Cartões de Crédito (R$ 3.915,75 total)
+        # Faturas dos Cartões de Crédito (Total: R$ 3.915,75)
         {"Data": "2026-08-10", "Descrição": "Fatura Itaú Black", "Valor (R$)": 850.00, "Tipo": "Saída", "Forma": "Cartão Itaú Black", "Categoria": "Cartão de Crédito"},
         {"Data": "2026-08-10", "Descrição": "Fatura C6 Carbon", "Valor (R$)": 620.00, "Tipo": "Saída", "Forma": "Cartão C6 Carbon", "Categoria": "Cartão de Crédito"},
         {"Data": "2026-08-10", "Descrição": "Fatura Itaú Platinum", "Valor (R$)": 710.00, "Tipo": "Saída", "Forma": "Cartão Itaú Platinum", "Categoria": "Cartão de Crédito"},
@@ -48,11 +48,30 @@ if 'lancamentos' not in st.session_state:
 
 if 'despesas_fixas' not in st.session_state:
     st.session_state.despesas_fixas = pd.DataFrame([
-        # Despesas Fixas Mapeadas (R$ 1.024,90 Moradia + R$ 2.195,26 Serviços/Rotina)
-        {"Local": "Apto", "Descrição": "Condomínio / Aluguel Apto", "Valor (R$)": 650.00, "Vencimento": "Dia 10", "Status": "🔴 Em Aberto"},
-        {"Local": "Apto", "Descrição": "Energia / Gás Apto", "Valor (R$)": 374.90, "Vencimento": "Dia 15", "Status": "🔴 Em Aberto"},
-        {"Local": "Casa", "Descrição": "Manutenção / Taxas Casa", "Valor (R$)": 500.00, "Vencimento": "Dia 20", "Status": "🔴 Em Aberto"},
-        {"Local": "Geral", "Descrição": "Serviços e Rotina (Internet, Assinaturas, Outros)", "Valor (R$)": 1695.26, "Vencimento": "Variados", "Status": "🔴 Em Aberto"}
+        # Apartamento (Total: R$ 738,97)
+        {"Local": "Apto", "Descrição": "Condomínio Apto", "Valor (R$)": 429.00, "Vencimento": "Dia 10", "Status": "🔴 Em Aberto"},
+        {"Local": "Apto", "Descrição": "Seguro Apto", "Valor (R$)": 104.77, "Vencimento": "Dia 10", "Status": "🔴 Em Aberto"},
+        {"Local": "Apto", "Descrição": "Internet Apto", "Valor (R$)": 99.90, "Vencimento": "Dia 15", "Status": "🔴 Em Aberto"},
+        {"Local": "Apto", "Descrição": "Energia Apto", "Valor (R$)": 72.00, "Vencimento": "Dia 15", "Status": "🔴 Em Aberto"},
+        {"Local": "Apto", "Descrição": "IPTU Apto", "Valor (R$)": 33.33, "Vencimento": "Dia 20", "Status": "🔴 Em Aberto"},
+
+        # Casa (Total: R$ 285,90)
+        {"Local": "Casa", "Descrição": "Internet Casa", "Valor (R$)": 99.90, "Vencimento": "Dia 10", "Status": "🔴 Em Aberto"},
+        {"Local": "Casa", "Descrição": "Energia Casa", "Valor (R$)": 96.00, "Vencimento": "Dia 15", "Status": "🔴 Em Aberto"},
+        {"Local": "Casa", "Descrição": "Água Casa", "Valor (R$)": 90.00, "Vencimento": "Dia 15", "Status": "🔴 Em Aberto"},
+
+        # Compromissos e Contas Fixas Gerais
+        {"Local": "Geral", "Descrição": "Curso de Inglês", "Valor (R$)": 293.40, "Vencimento": "Dia 05", "Status": "🔴 Em Aberto"},
+        {"Local": "Geral", "Descrição": "Seguro Carro", "Valor (R$)": 231.80, "Vencimento": "Dia 10", "Status": "🔴 Em Aberto"},
+        {"Local": "Geral", "Descrição": "CREA", "Valor (R$)": 118.00, "Vencimento": "Dia 10", "Status": "🔴 Em Aberto"},
+        {"Local": "Geral", "Descrição": "Plano Funerário", "Valor (R$)": 92.26, "Vencimento": "Dia 10", "Status": "🔴 Em Aberto"},
+        {"Local": "Geral", "Descrição": "Vivo (Telefonia)", "Valor (R$)": 86.00, "Vencimento": "Dia 15", "Status": "🔴 Em Aberto"},
+        {"Local": "Geral", "Descrição": "Netflix", "Valor (R$)": 59.90, "Vencimento": "Dia 20", "Status": "🔴 Em Aberto"},
+        {"Local": "Geral", "Descrição": "Amazon Prime", "Valor (R$)": 13.90, "Vencimento": "Dia 20", "Status": "🔴 Em Aberto"},
+
+        # Estimativas Mensais de Rotina
+        {"Local": "Geral", "Descrição": "Mercado (Estimado)", "Valor (R$)": 1000.00, "Vencimento": "Mensal", "Status": "🔴 Em Aberto"},
+        {"Local": "Geral", "Descrição": "Lazer (Estimado)", "Valor (R$)": 300.00, "Vencimento": "Mensal", "Status": "🔴 Em Aberto"}
     ])
 
 # --- NAVEGAÇÃO POR ABAS ---
@@ -69,7 +88,7 @@ aba_selecionada = st.sidebar.radio(
 )
 
 # =========================================================
-# ABA 1: CENTRO DE COMANDO (EDITÁVEL DIRETO NA TELA)
+# ABA 1: CENTRO DE COMANDO
 # =========================================================
 if aba_selecionada == "🏠 Centro de Comando":
     st.title("💼 CENTRAL FINANCEIRA")
@@ -81,7 +100,7 @@ if aba_selecionada == "🏠 Centro de Comando":
     total_entradas_calc = df[df['Tipo'] == 'Entrada']['Valor (R$)'].sum()
     total_saidas_calc = df[df['Tipo'] == 'Saída']['Valor (R$)'].sum() + df_fixas['Valor (R$)'].sum()
 
-    # Caixas de Edição Direta na Tela Principal com Valores Reais Default
+    # Caixas de Edição Direta na Tela
     c1, c2, c3, c4 = st.columns(4)
     with c1:
         receitas_input = st.number_input("Receitas do Mês (R$)", value=float(total_entradas_calc), step=100.0)
@@ -94,7 +113,7 @@ if aba_selecionada == "🏠 Centro de Comando":
 
     st.markdown("---")
 
-    # Caixas Editáveis de Metas e Reservas com Meta Real de R$ 15.000,00
+    # Metas e Reservas
     st.markdown("### 🎯 Metas & Reservas")
     col_m1, col_m2 = st.columns(2)
     with col_m1:
@@ -146,15 +165,14 @@ elif aba_selecionada == "💵 Total Recebido (Mês)":
     st.dataframe(df_entradas[["Data", "Descrição", "Valor (R$)", "Forma"]], use_container_width=True)
 
 # =========================================================
-# ABA 3: DESPESAS FIXAS (APTO / CASA) - COM STATUS PAGO / EM ABERTO
+# ABA 3: DESPESAS FIXAS (APTO / CASA / GERAL)
 # =========================================================
 elif aba_selecionada == "🏢 Despesas Fixas (Apto / Casa)":
-    st.title("🏢 Despesas Fixas (Apto & Casa)")
-    st.caption("Controle de vencimentos e status de pagamento das contas recorrentes")
+    st.title("🏢 Despesas Fixas (Apto, Casa & Geral)")
+    st.caption("Controle individualizado de vencimentos e status de pagamento das contas recorrentes")
 
     df_fixas = st.session_state.despesas_fixas
 
-    # Cálculos das Despesas Fixas
     total_fixas = df_fixas['Valor (R$)'].sum()
     total_pagas = df_fixas[df_fixas['Status'] == '🟢 Pago']['Valor (R$)'].sum()
     total_aberto = df_fixas[df_fixas['Status'] == '🔴 Em Aberto']['Valor (R$)'].sum()
@@ -170,7 +188,6 @@ elif aba_selecionada == "🏢 Despesas Fixas (Apto / Casa)":
     st.markdown("---")
     st.markdown("### 📋 Gerenciar Status das Contas Fixas")
 
-    # Tabela Editável para alterar o status de "🔴 Em Aberto" para "🟢 Pago"
     df_editado = st.data_editor(
         df_fixas,
         column_config={
@@ -192,7 +209,7 @@ elif aba_selecionada == "🏢 Despesas Fixas (Apto / Casa)":
         col_df1, col_df2 = st.columns(2)
         with col_df1:
             local_novo = st.selectbox("Local", ["Apto", "Casa", "Geral"])
-            desc_nova = st.text_input("Descrição da Conta (Ex: Luz, Água, IPTU)")
+            desc_nova = st.text_input("Descrição da Conta")
             valor_novo = st.number_input("Valor Estimado (R$)", min_value=0.01, step=10.0, format="%.2f")
         with col_df2:
             venc_novo = st.text_input("Dia do Vencimento (Ex: Dia 10)")
