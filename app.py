@@ -4,88 +4,102 @@ import plotly.express as px
 
 # Configuração da página
 st.set_page_config(
-    page_title="Dashboard Financeiro",
-    page_icon="💰",
+    page_title="Dashboard Financeiro Pessoal",
+    page_icon="📊",
     layout="wide"
 )
 
-# Estilização personaliza com CSS
+# Estilização CSS customizada
 st.markdown("""
     <style>
-    .main {
-        background-color: #f8f9fa;
-    }
+    .main { background-color: #f8f9fa; }
     .stMetric {
         background-color: #ffffff;
         padding: 15px;
         border-radius: 10px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
     </style>
 """, unsafe_allow_html=True)
 
-st.title("💰 Painel Financeiro Pessoal")
+st.title("📊 Painel Financeiro Pessoal")
 
-# Dados de exemplo para inicialização
-if "df" not in st.session_state:
-    st.session_state.df = pd.DataFrame({
-        "Data": ["2026-08-01", "2026-08-05", "2026-08-10"],
-        "Categoria": ["Moradia", "Alimentação", "Transporte"],
-        "Descrição": ["Aluguel", "Supermercado", "Combustível"],
-        "Valor": [1500.0, 450.0, 200.0],
-        "Tipo": ["Despesa", "Despesa", "Despesa"]
-    })
+# --- DADOS CONSOLIDADOS ---
+RECEITA_MENSAL = 8820.00  # 2x de R$ 4.410,00
+META_RESERVA = 15000.00
 
-# Menu Lateral (Sidebar)
-st.sidebar.header("Novo Lançamento")
-com_data = st.sidebar.date_input("Data")
-com_cat = st.sidebar.selectbox("Categoria", ["Moradia", "Alimentação", "Transporte", "Lazer", "Receita", "Outros"])
-com_desc = st.sidebar.text_input("Descrição")
-com_val = st.sidebar.number_input("Valor (R$)", min_value=0.0, format="%.2f")
-com_tipo = st.sidebar.radio("Tipo", ["Despesa", "Receita"])
+# Despesas Fixas Mapeadas
+despesas_fixas_data = {
+    "Categoria": ["Moradia (Apto e Casa)", "Serviços e Rotina"],
+    "Valor": [1024.90, 2195.26]
+}
+df_fixas = pd.DataFrame(despesas_fixas_data)
+total_despesas_fixas = df_fixas["Valor"].sum()
 
-if st.sidebar.button("Adicionar Lançamento"):
-    novo_dado = pd.DataFrame({
-        "Data": [str(com_data)],
-        "Categoria": [com_cat],
-        "Descrição": [com_desc],
-        "Valor": [com_val],
-        "Tipo": [com_tipo]
-    })
-    st.session_state.df = pd.concat([st.session_state.df, novo_dado], ignore_index=True)
-    st.sidebar.success("Lançamento adicionado com sucesso!")
+# Faturas de Cartões de Crédito (7 cartões mapeados)
+cartoes_data = {
+    "Cartão": ["Cartão 1", "Cartão 2", "Cartão 3", "Cartão 4", "Cartão 5", "Cartão 6", "Cartão 7"],
+    "Valor Fatura": [850.00, 620.00, 710.00, 450.00, 530.00, 380.00, 375.75]
+}
+df_cartoes = pd.DataFrame(cartoes_data)
+total_cartoes = df_cartoes["Valor Fatura"].sum()
 
-# Métricas Principais
-total_receita = st.session_state.df[st.session_state.df["Tipo"] == "Receita"]["Valor"].sum()
-total_despesa = st.session_state.df[st.session_state.df["Tipo"] == "Despesa"]["Valor"].sum()
-saldo = total_receita - total_despesa
+# Totais do Mês
+total_despesas = total_despesas_fixas + total_cartoes
+saldo_livre = RECEITA_MENSAL - total_despesas
 
-col1, col2, col3 = st.columns(3)
-col1.metric("Receita Total", f"R$ {total_receita:,.2f}")
-col2.metric("Despesa Total", f"R$ {total_despesa:,.2f}")
-col3.metric("Saldo Atual", f"R$ {saldo:,.2f}")
+# --- MÉTRICAS DE TOPO ---
+col1, col2, col3, col4 = st.columns(4)
+col1.metric("Receita Mensal", f"R$ {RECEITA_MENSAL:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+col2.metric("Despesas Fixas", f"R$ {total_despesas_fixas:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+col3.metric("Faturas de Cartões", f"R$ {total_cartoes:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+col4.metric("Saldo Livre Estimado", f"R$ {saldo_livre:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
 
 st.divider()
 
-# Gráficos
+# --- META DE RESERVA DE EMERGÊNCIA ---
+st.subheader("🎯 Meta de Reserva Financeira")
+reserva_atual = st.number_input(
+    "Valor atual acumulado na reserva (R$):", 
+    min_value=0.0, 
+    value=5000.00, 
+    step=500.00
+)
+progresso_reserva = min(reserva_atual / META_RESERVA, 1.0)
+
+st.progress(progresso_reserva)
+st.caption(f"Progresso: **{progresso_reserva*100:.1f}%** de R$ {META_RESERVA:,.2f} atingidos.")
+
+st.divider()
+
+# --- ANÁLISE GRÁFICA ---
 col_graf1, col_graf2 = st.columns(2)
 
-df_despesas = st.session_state.df[st.session_state.df["Tipo"] == "Despesa"]
-
 with col_graf1:
-    st.subheader("Despesas por Categoria")
-    if not df_despesas.empty:
-        fig_cat = px.pie(
-            df_despesas, 
-            names="Categoria", 
-            values="Valor", 
-            hole=0.4,
-            color_discrete_sequence=px.colors.qualitative.Set3
-        )
-        st.plotly_chart(fig_cat, use_container_width=True)
-    else:
-        st.info("Nenhuma despesa registrada.")
+    st.subheader("Detalhamento de Cartões de Crédito")
+    fig_cartoes = px.bar(
+        df_cartoes,
+        x="Cartão",
+        y="Valor Fatura",
+        text_auto=".2f",
+        color="Cartão",
+        color_discrete_sequence=px.colors.qualitative.Pastel
+    )
+    fig_cartoes.update_layout(showlegend=False, yaxis_title="R$")
+    st.plotly_chart(fig_cartoes, use_container_width=True)
 
 with col_graf2:
-    st.subheader("Histórico de Lançamentos")
-    st.dataframe(st.session_state.df, use_container_width=True)
+    st.subheader("Distribuição de Despesas Fixas")
+    fig_fixas = px.pie(
+        df_fixas,
+        names="Categoria",
+        values="Valor",
+        hole=0.4,
+        color_discrete_sequence=px.colors.qualitative.Set2
+    )
+    st.plotly_chart(fig_fixas, use_container_width=True)
+
+# --- TABELAS DETALHADAS ---
+st.divider()
+st.subheader("📋 Resumo dos Cartões")
+st.dataframe(df_cartoes, use_container_width=True)
