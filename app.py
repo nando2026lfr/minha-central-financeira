@@ -14,33 +14,49 @@ st.markdown("""
     .subtext { color: #8b949e; font-size: 12px; }
     .positive { color: #2ea043; font-weight: bold; }
     .negative { color: #f85149; font-weight: bold; }
+    .warning { color: #d29922; font-weight: bold; }
     </style>
 """, unsafe_allow_html=True)
 
-# --- INFORMAÇÕES DE TODOS OS CARTÕES DE CRÉDITO ---
-CARTÕES_DETALHES = {
-    "Cartão C6 Carbon": "Fechamento: Dia 28 | Vencimento: Dia 05",
-    "Cartão Itaú Platinum": "Fechamento: Dia 03 | Vencimento: Dia 11",
-    "Cartão Sam's Club": "Fechamento: Dia 02 | Vencimento: Dia 10",
-    "Cartão Mercado Pago": "Fechamento: Dia 09 | Vencimento: Dia 17",
-    "Cartão Amazon": "Fechamento: Dia 17 | Vencimento: Dia 25",
-    "Outros Cartões": "Fechamento: Variado | Vencimento: Variado"
-}
+# --- LISTA COMPLETA DE CARTÕES DE CRÉDITO ---
+LISTA_CARTÕES = [
+    "Cartão Itaú Black",
+    "Cartão C6 Carbon",
+    "Cartão Itaú Platinum",
+    "Cartão Sam's Club",
+    "Cartão Mercado Pago",
+    "Cartão Amazon",
+    "Outros Cartões"
+]
 
 # --- MEMÓRIA DA APLICAÇÃO (SESSION STATE) ---
 if 'lancamentos' not in st.session_state:
     st.session_state.lancamentos = pd.DataFrame([
-        {"Data": "2026-08-01", "Descrição": "Supermercado", "Valor (R$)": 350.00, "Tipo": "Saída", "Forma": "Cartão C6 Carbon", "Categoria": "Alimentação"},
+        {"Data": "2026-08-01", "Descrição": "Supermercado", "Valor (R$)": 350.00, "Tipo": "Saída", "Forma": "Cartão Itaú Black", "Categoria": "Alimentação"},
         {"Data": "2026-08-05", "Descrição": "Combustível", "Valor (R$)": 200.00, "Tipo": "Saída", "Forma": "Pix", "Categoria": "Transporte"},
         {"Data": "2026-08-01", "Descrição": "Adiantamento Quinzenal (1º Pagamento)", "Valor (R$)": 4410.00, "Tipo": "Entrada", "Forma": "Pix", "Categoria": "Renda Quinzenal"},
         {"Data": "2026-08-15", "Descrição": "Salário Quinzenal (2º Pagamento)", "Valor (R$)": 4410.00, "Tipo": "Entrada", "Forma": "Pix", "Categoria": "Renda Quinzenal"},
+    ])
+
+if 'despesas_fixas' not in st.session_state:
+    st.session_state.despesas_fixas = pd.DataFrame([
+        {"Local": "Apto", "Descrição": "Condomínio Apto", "Valor (R$)": 650.00, "Vencimento": "Dia 10", "Status": "🟢 Pago"},
+        {"Local": "Apto", "Descrição": "Energia Apto", "Valor (R$)": 180.00, "Vencimento": "Dia 15", "Status": "🔴 Em Aberto"},
+        {"Local": "Casa", "Descrição": "IPTU Casa", "Valor (R$)": 120.00, "Vencimento": "Dia 20", "Status": "🔴 Em Aberto"},
+        {"Local": "Casa", "Descrição": "Internet Casa", "Valor (R$)": 140.00, "Vencimento": "Dia 25", "Status": "🔴 Em Aberto"},
     ])
 
 # --- NAVEGAÇÃO POR ABAS ---
 st.sidebar.title("📌 Menu Principal")
 aba_selecionada = st.sidebar.radio(
     "Navegue pelo App:",
-    ["🏠 Centro de Comando", "💵 Total Recebido (Mês)", "➕ Lançar Gastos", "📋 Histórico de Lançamentos"]
+    [
+        "🏠 Centro de Comando", 
+        "💵 Total Recebido (Mês)", 
+        "🏢 Despesas Fixas (Apto / Casa)", 
+        "➕ Lançar Gastos", 
+        "📋 Histórico de Lançamentos"
+    ]
 )
 
 # =========================================================
@@ -120,10 +136,76 @@ elif aba_selecionada == "💵 Total Recebido (Mês)":
     st.dataframe(df_entradas[["Data", "Descrição", "Valor (R$)", "Forma"]], use_container_width=True)
 
 # =========================================================
-# ABA 3: FORMULÁRIO DE LANÇAMENTO (TODOS OS CARTÕES)
+# ABA 3: DESPESAS FIXAS (APTO / CASA) - COM STATUS PAGO / EM ABERTO
+# =========================================================
+elif aba_selecionada == "🏢 Despesas Fixas (Apto / Casa)":
+    st.title("🏢 Despesas Fixas (Apto & Casa)")
+    st.caption("Controle de vencimentos e status de pagamento das contas recorrentes")
+
+    df_fixas = st.session_state.despesas_fixas
+
+    # Cálculos das Despesas Fixas
+    total_fixas = df_fixas['Valor (R$)'].sum()
+    total_pagas = df_fixas[df_fixas['Status'] == '🟢 Pago']['Valor (R$)'].sum()
+    total_aberto = df_fixas[df_fixas['Status'] == '🔴 Em Aberto']['Valor (R$)'].sum()
+
+    c_f1, c_f2, c_f3 = st.columns(3)
+    with c_f1:
+        st.markdown(f'<div class="card"><span class="subtext">TOTAL DESPESAS FIXAS</span><h2>R$ {total_fixas:,.2f}</h2></div>', unsafe_allow_html=True)
+    with c_f2:
+        st.markdown(f'<div class="card"><span class="subtext">TOTAL PAGO</span><h2 class="positive">R$ {total_pagas:,.2f}</h2></div>', unsafe_allow_html=True)
+    with c_f3:
+        st.markdown(f'<div class="card"><span class="subtext">EM ABERTO (A PAGAR)</span><h2 class="warning">R$ {total_aberto:,.2f}</h2></div>', unsafe_allow_html=True)
+
+    st.markdown("---")
+    st.markdown("### 📋 Gerenciar Status das Contas Fixas")
+
+    # Tabela Editável para alterar o status de "🔴 Em Aberto" para "🟢 Pago"
+    df_editado = st.data_editor(
+        df_fixas,
+        column_config={
+            "Local": st.column_config.SelectboxColumn("Local", options=["Apto", "Casa", "Geral"], required=True),
+            "Descrição": st.column_config.TextColumn("Descrição", required=True),
+            "Valor (R$)": st.column_config.NumberColumn("Valor (R$)", format="R$ %.2f", required=True),
+            "Vencimento": st.column_config.TextColumn("Vencimento (Dia/Data)", required=True),
+            "Status": st.column_config.SelectboxColumn("Status de Pagamento", options=["🔴 Em Aberto", "🟢 Pago"], required=True)
+        },
+        num_rows="dynamic",
+        use_container_width=True
+    )
+
+    st.session_state.despesas_fixas = df_editado
+
+    st.markdown("---")
+    st.markdown("### ➕ Adicionar Nova Despesa Fixa")
+    with st.form("form_despesa_fixa", clear_on_submit=True):
+        col_df1, col_df2 = st.columns(2)
+        with col_df1:
+            local_novo = st.selectbox("Local", ["Apto", "Casa", "Geral"])
+            desc_nova = st.text_input("Descrição da Conta (Ex: Luz, Água, IPTU)")
+            valor_novo = st.number_input("Valor Estimado (R$)", min_value=0.01, step=10.0, format="%.2f")
+        with col_df2:
+            venc_novo = st.text_input("Dia do Vencimento (Ex: Dia 10)")
+            status_novo = st.selectbox("Status Inicial", ["🔴 Em Aberto", "🟢 Pago"])
+
+        btn_add_fixa = st.form_submit_button("➕ Cadastrar Despesa Fixa")
+        if btn_add_fixa:
+            nova_fixa = {
+                "Local": local_novo,
+                "Descrição": desc_nova,
+                "Valor (R$)": valor_novo,
+                "Vencimento": venc_novo,
+                "Status": status_novo
+            }
+            st.session_state.despesas_fixas = pd.concat([st.session_state.despesas_fixas, pd.DataFrame([nova_fixa])], ignore_index=True)
+            st.success(f"Despesa fixa '{desc_nova}' adicionada com sucesso!")
+            st.rerun()
+
+# =========================================================
+# ABA 4: FORMULÁRIO DE LANÇAMENTO DIÁRIO
 # =========================================================
 elif aba_selecionada == "➕ Lançar Gastos":
-    st.title("➕ Registrar Novo Lançamento")
+    st.title("➕ Registrar Novo Lançamento Diário")
     
     with st.form("form_lancamento", clear_on_submit=True):
         col_f1, col_f2 = st.columns(2)
@@ -135,24 +217,10 @@ elif aba_selecionada == "➕ Lançar Gastos":
         with col_f2:
             tipo = st.selectbox("Tipo de Lançamento", ["Saída", "Entrada"])
             
-            # Lista completa com todos os cartões especificados
-            opcoes_pagamento = [
-                "Cartão C6 Carbon",
-                "Cartão Itaú Platinum",
-                "Cartão Sam's Club",
-                "Cartão Mercado Pago",
-                "Cartão Amazon",
-                "Outros Cartões",
-                "Débito",
-                "Pix",
-                "Dinheiro"
-            ]
+            # Opções de pagamento incluindo todos os cartões e formas de pagamento
+            opcoes_pagamento = LISTA_CARTÕES + ["Débito", "Pix", "Dinheiro"]
             forma = st.selectbox("Forma de Pagamento", opcoes_pagamento)
             categoria = st.selectbox("Categoria", ["Alimentação", "Transporte", "Moradia", "Lazer", "Contas Fixas", "Renda Quinzenal", "Outros"])
-
-        # Exibe automaticamente as datas de fechamento e vencimento do cartão selecionado
-        if forma in CARTÕES_DETALHES:
-            st.info(f"💳 **{forma}:** {CARTÕES_DETALHES[forma]}")
 
         btn_salvar = st.form_submit_button("💾 Salvar Registro")
 
@@ -169,7 +237,7 @@ elif aba_selecionada == "➕ Lançar Gastos":
             st.success(f"Lançamento '{descricao}' de R$ {valor:.2f} registrado com sucesso!")
 
 # =========================================================
-# ABA 4: HISTÓRICO COMPLETO
+# ABA 5: HISTÓRICO COMPLETO
 # =========================================================
 elif aba_selecionada == "📋 Histórico de Lançamentos":
     st.title("📋 Histórico Geral de Lançamentos")
