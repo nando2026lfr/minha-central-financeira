@@ -38,10 +38,10 @@ if 'lancamentos' not in st.session_state:
         
         # Faturas dos Cartões de Crédito
         {"Data": "2026-08-10", "Descrição": "Fatura Itaú Black", "Valor (R$)": 850.00, "Tipo": "Saída", "Forma": "Cartão Itaú Black", "Categoria": "Cartão de Crédito", "Status": "🔴 Em Aberto"},
-        {"Data": "2026-08-10", "Descrição": "Fatura C6 Carbon", "Valor (R$)": 620.00, "Tipo": "Saída", "Forma": "Cartão C6 Carbon", "Categoria": "Cartão de Crédito", "Status": "🔴 Em Aberto"},
+        {"Data": "2026-08-10", "Descrição": "Fatura C6 Carbon", "Valor (R$)": 1727.66, "Tipo": "Saída", "Forma": "Cartão C6 Carbon", "Categoria": "Cartão de Crédito", "Status": "🔴 Em Aberto"},
         {"Data": "2026-08-10", "Descrição": "Fatura Itaú Platinum", "Valor (R$)": 710.00, "Tipo": "Saída", "Forma": "Cartão Itaú Platinum", "Categoria": "Cartão de Crédito", "Status": "🔴 Em Aberto"},
         {"Data": "2026-08-10", "Descrição": "Fatura Sam's Club", "Valor (R$)": 450.00, "Tipo": "Saída", "Forma": "Cartão Sam's Club", "Categoria": "Cartão de Crédito", "Status": "🔴 Em Aberto"},
-        {"Data": "2026-08-10", "Descrição": "Fatura Mercado Pago", "Valor (R$)": 530.00, "Tipo": "Saída", "Forma": "Cartão Mercado Pago", "Categoria": "Cartão de Crédito", "Status": "🔴 Em Aberto"},
+        {"Data": "2026-08-10", "Descrição": "Fatura Mercado Pago", "Valor (R$)": 629.38, "Tipo": "Saída", "Forma": "Cartão Mercado Pago", "Categoria": "Cartão de Crédito", "Status": "🔴 Em Aberto"},
         {"Data": "2026-08-10", "Descrição": "Fatura Amazon", "Valor (R$)": 380.00, "Tipo": "Saída", "Forma": "Cartão Amazon", "Categoria": "Cartão de Crédito", "Status": "🔴 Em Aberto"},
         {"Data": "2026-08-10", "Descrição": "Outros Cartões", "Valor (R$)": 375.75, "Tipo": "Saída", "Forma": "Outros Cartões", "Categoria": "Cartão de Crédito", "Status": "🔴 Em Aberto"}
     ])
@@ -74,20 +74,24 @@ if 'despesas_fixas' not in st.session_state:
         {"Local": "Geral", "Descrição": "Lazer (Estimado)", "Valor (R$)": 300.00, "Vencimento": "Mensal", "Status": "🔴 Em Aberto"}
     ])
 
-# --- HISTÓRICO EXATO DE PARCELAS DETALHADAS ---
+# --- HISTÓRICO EXATO DE PARCELAS DOS CARTÕES ---
 if 'parcelados' not in st.session_state:
     st.session_state.parcelados = pd.DataFrame([
-        # C6 Carbon
+        # MERCADO PAGO (COMPLETO)
+        {"Item / Compra": "Parcela 1 (Última 🎉)", "Cartão": "Cartão Mercado Pago", "Valor Parcela (R$)": 107.47, "Parcela Atual": 4, "Total Parcelas": 4, "Mês Término": "08/2026"},
+        {"Item / Compra": "Parcela 2", "Cartão": "Cartão Mercado Pago", "Valor Parcela (R$)": 141.61, "Parcela Atual": 6, "Total Parcelas": 18, "Mês Término": "08/2027"},
+        {"Item / Compra": "Parcela 3", "Cartão": "Cartão Mercado Pago", "Valor Parcela (R$)": 82.80, "Parcela Atual": 12, "Total Parcelas": 21, "Mês Término": "05/2027"},
+        {"Item / Compra": "Parcela 4", "Cartão": "Cartão Mercado Pago", "Valor Parcela (R$)": 90.47, "Parcela Atual": 13, "Total Parcelas": 21, "Mês Término": "04/2027"},
+        {"Item / Compra": "Parcela 5", "Cartão": "Cartão Mercado Pago", "Valor Parcela (R$)": 121.37, "Parcela Atual": 13, "Total Parcelas": 18, "Mês Término": "01/2027"},
+        {"Item / Compra": "Parcela 6", "Cartão": "Cartão Mercado Pago", "Valor Parcela (R$)": 85.66, "Parcela Atual": 14, "Total Parcelas": 21, "Mês Término": "03/2027"},
+
+        # C6 CARBON (COMPLETO)
         {"Item / Compra": "Pneus", "Cartão": "Cartão C6 Carbon", "Valor Parcela (R$)": 165.80, "Parcela Atual": 8, "Total Parcelas": 10, "Mês Término": "10/2026"},
         {"Item / Compra": "Despesas CNPJ", "Cartão": "Cartão C6 Carbon", "Valor Parcela (R$)": 825.48, "Parcela Atual": 2, "Total Parcelas": 12, "Mês Término": "06/2027"},
+        {"Item / Compra": "Revisão Jeep", "Cartão": "Cartão C6 Carbon", "Valor Parcela (R$)": 736.38, "Parcela Atual": 4, "Total Parcelas": 4, "Mês Término": "08/2026"},
 
-        # Itaú Black
-        {"Item / Compra": "Seguro Jeep", "Cartão": "Cartão Itaú Black", "Valor Parcela (R$)": 231.80, "Parcela Atual": 6, "Total Parcelas": 10, "Mês Término": "12/2026"},
-
-        # Mercado Pago
-        {"Item / Compra": "Compra MP #1", "Cartão": "Cartão Mercado Pago", "Valor Parcela (R$)": 141.61, "Parcela Atual": 6, "Total Parcelas": 18, "Mês Término": "08/2027"},
-        {"Item / Compra": "Compra MP #2", "Cartão": "Cartão Mercado Pago", "Valor Parcela (R$)": 121.37, "Parcela Atual": 13, "Total Parcelas": 18, "Mês Término": "01/2027"},
-        {"Item / Compra": "Compra MP #3", "Cartão": "Cartão Mercado Pago", "Valor Parcela (R$)": 85.66, "Parcela Atual": 14, "Total Parcelas": 21, "Mês Término": "03/2027"}
+        # ITAÚ BLACK (COMPLETO)
+        {"Item / Compra": "Seguro Jeep", "Cartão": "Cartão Itaú Black", "Valor Parcela (R$)": 231.80, "Parcela Atual": 6, "Total Parcelas": 10, "Mês Término": "12/2026"}
     ])
 
 # --- NAVEGAÇÃO POR ABAS ---
@@ -243,15 +247,14 @@ elif aba_selecionada == "🏢 Despesas Fixas (Apto / Casa)":
             st.rerun()
 
 # =========================================================
-# ABA 4: COMPRAS PARCELADAS DOS CARTÕES DETALHADAS
+# ABA 4: COMPRAS PARCELADAS DOS CARTÕES
 # =========================================================
 elif aba_selecionada == "💳 Compras Parceladas":
     st.title("💳 Acompanhamento de Parcelados por Cartão")
-    st.caption("Visão individualizada de cada compra parcelada, com cálculo de término e valor restante")
+    st.caption("Visão individualizada de cada compra parcelada com cálculo de parcelas faltantes e saldo devedor")
 
     df_p = st.session_state.parcelados
 
-    # Cálculos dinâmicos
     if not df_p.empty:
         df_p["Faltam (Parcelas)"] = df_p["Total Parcelas"] - df_p["Parcela Atual"]
         df_p["Saldo Restante (R$)"] = df_p["Faltam (Parcelas)"] * df_p["Valor Parcela (R$)"]
@@ -293,7 +296,7 @@ elif aba_selecionada == "💳 Compras Parceladas":
     with st.form("form_parcelado", clear_on_submit=True):
         col_p1, col_p2 = st.columns(2)
         with col_p1:
-            item_p = st.text_input("Descrição do Item (Ex: Celular, Pneu, Ferramenta)")
+            item_p = st.text_input("Descrição do Item (Ex: Parcela X, Celular, Pneu)")
             cartao_p = st.selectbox("Cartão Utilizado", LISTA_CARTÕES)
             valor_p = st.number_input("Valor da Parcela (R$)", min_value=0.01, step=10.0, format="%.2f")
         with col_p2:
