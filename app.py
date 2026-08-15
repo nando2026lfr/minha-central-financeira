@@ -1,11 +1,12 @@
 import streamlit as st
+import pandas as pd
 import plotly.graph_objects as go
-import plotly.express as px
+from datetime import datetime
 
-# Configuração da página para Celular/Desktop
-st.set_page_config(page_title="Central Financeira", layout="wide", initial_sidebar_state="collapsed")
+# Configuração inicial
+st.set_page_config(page_title="Central Financeira", layout="wide", initial_sidebar_state="expanded")
 
-# Estilo visual escuro (CSS)
+# Estilo visual escuro
 st.markdown("""
     <style>
     .stApp { background-color: #0d1117; color: #f0f6fc; }
@@ -16,116 +17,114 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.title("💼 CENTRAL FINANCEIRA")
-st.caption("Agosto / 2026 — Controle & Saúde Financeira")
+# --- SISTEMA DE MEMÓRIA DE DADOS (SESSION STATE) ---
+if 'lancamentos' not in st.session_state:
+    # Dados de exemplo pré-carregados
+    st.session_state.lancamentos = pd.DataFrame([
+        {"Data": "2026-08-01", "Descrição": "Supermercado", "Valor (R$)": 350.00, "Tipo": "Saída", "Forma": "Cartão de Crédito", "Categoria": "Alimentação"},
+        {"Data": "2026-08-05", "Descrição": "Combustível", "Valor (R$)": 200.00, "Tipo": "Saída", "Forma": "Pix", "Categoria": "Transporte"},
+        {"Data": "2026-08-15", "Descrição": "Adiantamento Salarial / Quinzena", "Valor (R$)": 4410.00, "Tipo": "Entrada", "Forma": "Pix", "Categoria": "Renda"},
+    ])
 
-# --- BARRA LATERAL / CAMPOS EDITÁVEIS ---
-st.sidebar.header("⚙️ Painel de Edição")
-st.sidebar.markdown("Altere os dados para atualizar o dashboard:")
+# --- NAVEGAÇÃO POR ABAS NA BARRA LATERAL ---
+st.sidebar.title("📌 Menu Principal")
+aba_selecionada = st.sidebar.radio(
+    "Navegue pelo App:",
+    ["🏠 Centro de Comando", "➕ Lançar Gastos", "📋 Histórico de Lançamentos"]
+)
 
-receita_total = st.sidebar.number_input("Receita do Mês (R$)", value=8820.00, step=100.0)
-despesa_total = st.sidebar.number_input("Despesas do Mês (R$)", value=5145.60, step=100.0)
-reserva_atual = st.sidebar.number_input("Reserva Atual (R$)", value=1850.00, step=100.0)
-meta_reserva = st.sidebar.number_input("Meta da Reserva (R$)", value=15000.00, step=500.0)
+# =========================================================
+# ABA 1: CENTRO DE COMANDO (DASHBOARD)
+# =========================================================
+if aba_selecionada == "🏠 Centro de Comando":
+    st.title("💼 CENTRAL FINANCEIRA")
+    st.caption("Visão Geral & Indicadores da Quinzena / Mês")
 
-saldo_disponivel = receita_total - despesa_total
-sobra_prevista = receita_total - despesa_total
+    df = st.session_state.lancamentos
+    
+    total_entradas = df[df['Tipo'] == 'Entrada']['Valor (R$)'].sum()
+    total_saidas = df[df['Tipo'] == 'Saída']['Valor (R$)'].sum()
+    saldo_atual = total_entradas - total_saidas
 
-# --- 1. CARDS DE DESTAQUE ---
-col1, col2, col3, col4 = st.columns(4)
+    # Cards Principais
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        st.markdown(f'<div class="card"><span class="subtext">SALDO ATUAL</span><h2 class="positive">R$ {saldo_atual:,.2f}</h2></div>', unsafe_allow_html=True)
+    with c2:
+        st.markdown(f'<div class="card"><span class="subtext">ENTRADAS</span><h2>R$ {total_entradas:,.2f}</h2></div>', unsafe_allow_html=True)
+    with c3:
+        st.markdown(f'<div class="card"><span class="subtext">SAÍDAS (GASTOS)</span><h2 class="negative">R$ {total_saidas:,.2f}</h2></div>', unsafe_allow_html=True)
+    with c4:
+        st.markdown(f'<div class="card"><span class="subtext">SOBRA PREVISTA</span><h2 style="color: #a371f7;">R$ {saldo_atual:,.2f}</h2></div>', unsafe_allow_html=True)
 
-with col1:
-    st.markdown(f"""
-        <div class="card">
-            <span class="subtext">SALDO DISPONÍVEL</span>
-            <h2 class="positive">R$ {saldo_disponivel:,.2f}</h2>
-            <span class="subtext">Disponível para uso</span>
-        </div>
-    """, unsafe_allow_html=True)
+    st.markdown("---")
 
-with col2:
-    st.markdown(f"""
-        <div class="card">
-            <span class="subtext">RECEITAS DO MÊS</span>
-            <h2>R$ {receita_total:,.2f}</h2>
-            <span class="subtext">Recebido: R$ {receita_total*0.5:,.2f} (50%)</span>
-        </div>
-    """, unsafe_allow_html=True)
+    # Gráfico de Gastos por Forma de Pagamento
+    col_g1, col_g2 = st.columns(2)
+    with col_g1:
+        st.markdown("**GASTOS POR FORMA DE PAGAMENTO**")
+        df_saidas = df[df['Tipo'] == 'Saída']
+        if not df_saidas.empty:
+            df_forma = df_saidas.groupby('Forma')['Valor (R$)'].sum().reset_index()
+            fig_forma = go.Figure(data=[go.Pie(labels=df_forma['Forma'], values=df_forma['Valor (R$)'], hole=.5)])
+            fig_forma.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+            st.plotly_chart(fig_forma, use_container_width=True)
+        else:
+            st.info("Nenhum gasto registrado ainda.")
 
-with col3:
-    st.markdown(f"""
-        <div class="card">
-            <span class="subtext">DESPESAS DO MÊS</span>
-            <h2 class="negative">R$ {despesa_total:,.2f}</h2>
-            <span class="subtext">Previsto: R$ {receita_total:,.2f} (58%)</span>
-        </div>
-    """, unsafe_allow_html=True)
+    with col_g2:
+        st.markdown("**GASTOS POR CATEGORIA**")
+        if not df_saidas.empty:
+            df_cat = df_saidas.groupby('Categoria')['Valor (R$)'].sum().reset_index()
+            fig_cat = go.Figure(data=[go.Pie(labels=df_cat['Categoria'], values=df_cat['Valor (R$)'], hole=.5)])
+            fig_cat.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+            st.plotly_chart(fig_cat, use_container_width=True)
+        else:
+            st.info("Nenhuma categoria registrada ainda.")
 
-with col4:
-    st.markdown(f"""
-        <div class="card">
-            <span class="subtext">SOBRA PREVISTA</span>
-            <h2 style="color: #a371f7;">R$ {sobra_prevista:,.2f}</h2>
-            <span class="subtext">Para investir ou amortizar</span>
-        </div>
-    """, unsafe_allow_html=True)
+# =========================================================
+# ABA 2: FORMULÁRIO DE LANÇAMENTO RÁPIDO
+# =========================================================
+elif aba_selecionada == "➕ Lançar Gastos":
+    st.title("➕ Registrar Novo Lançamento")
+    st.caption("Preencha os dados abaixo para registrar um gasto ou entrada:")
 
-st.markdown("---")
+    with st.form("form_lancamento", clear_on_submit=True):
+        col_f1, col_f2 = st.columns(2)
+        with col_f1:
+            data = st.date_input("Data do Lançamento", datetime.now())
+            descricao = st.text_input("Descrição (Ex: Feira, Gasolina, Lanche)")
+            valor = st.number_input("Valor (R$)", min_value=0.01, step=5.00, format="%.2f")
+        
+        with col_f2:
+            tipo = st.selectbox("Tipo de Movimentação", ["Saída", "Entrada"])
+            forma = st.selectbox("Forma de Pagamento / Origem", ["Cartão de Crédito", "Débito", "Pix", "Dinheiro"])
+            categoria = st.selectbox("Categoria", ["Alimentação", "Transporte", "Moradia", "Lazer", "Contas Fixas", "Outros", "Renda"])
 
-# --- 2. GRÁFICOS DE ROSCA (CARTÕES E PATRIMÔNIO) ---
-col_g1, col_g2, col_g3 = st.columns(3)
+        btn_salvar = st.form_submit_button("💾 Salvar Lançamento")
 
-with col_g1:
-    st.markdown("**UTILIZAÇÃO DOS CARTÕES**")
-    fig1 = go.Figure(data=[go.Pie(
-        labels=['Utilizado', 'Disponível'], 
-        values=[5527.27, 40824.96], 
-        hole=.6,
-        marker_colors=['#1f6beb', '#21262d']
-    )])
-    fig1.update_layout(showlegend=False, margin=dict(t=10, b=10, l=10, r=10), paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
-    st.plotly_chart(fig1, use_container_width=True)
+        if btn_salvar:
+            novo_item = {
+                "Data": str(data),
+                "Descrição": descricao,
+                "Valor (R$)": valor,
+                "Tipo": tipo,
+                "Forma": forma,
+                "Categoria": categoria
+            }
+            st.session_state.lancamentos = pd.concat([st.session_state.lancamentos, pd.DataFrame([novo_item])], ignore_index=True)
+            st.success(f"Lançamento '{descricao}' de R$ {valor:.2f} registrado com sucesso!")
 
-with col_g2:
-    st.markdown("**DISTRIBUIÇÃO PATRIMONIAL**")
-    fig2 = go.Figure(data=[go.Pie(
-        labels=['Apartamento', 'Veículo', 'FGTS'], 
-        values=[300000, 84000, 49500], 
-        hole=.6,
-        marker_colors=['#1f6beb', '#2ea043', '#d29922']
-    )])
-    fig2.update_layout(showlegend=False, margin=dict(t=10, b=10, l=10, r=10), paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
-    st.plotly_chart(fig2, use_container_width=True)
+# =========================================================
+# ABA 3: HISTÓRICO DE LANÇAMENTOS
+# =========================================================
+elif aba_selecionada == "📋 Histórico de Lançamentos":
+    st.title("📋 Histórico Completo de Lançamentos")
+    st.caption("Confira todos os registros da quinzena/mês:")
 
-with col_g3:
-    st.markdown("**RESERVA DE EMERGÊNCIA**")
-    pct_reserva = (reserva_atual / meta_reserva) * 100
-    fig3 = go.Figure(data=[go.Pie(
-        labels=['Atingido', 'Falta'], 
-        values=[reserva_atual, meta_reserva - reserva_atual], 
-        hole=.6,
-        marker_colors=['#d29922', '#21262d']
-    )])
-    fig3.update_layout(showlegend=False, margin=dict(t=10, b=10, l=10, r=10), paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
-    st.plotly_chart(fig3, use_container_width=True)
-    st.caption(f"Meta: R$ {meta_reserva:,.2f} ({pct_reserva:.1f}% concluído)")
+    df_exibicao = st.session_state.lancamentos.sort_values(by="Data", ascending=False)
+    st.dataframe(df_exibicao, use_container_width=True)
 
-st.markdown("---")
-
-# --- 3. EVOLUÇÃO E RECOMENDAÇÕES ---
-col_e1, col_e2 = st.columns([2, 1])
-
-with col_e1:
-    st.markdown("**EVOLUÇÃO DOS ÚLTIMOS 6 MESES**")
-    meses = ['Mar/26', 'Abr/26', 'Mai/26', 'Jun/26', 'Jul/26', 'Ago/26']
-    fig_line = go.Figure()
-    fig_line.add_trace(go.Scatter(x=meses, y=[375000, 390000, 410000, 420000, 428000, 433500], name='Patrimônio', line=dict(color='#2ea043', width=3)))
-    fig_line.add_trace(go.Scatter(x=meses, y=[280000, 250000, 220000, 190000, 160000, 140000], name='Dívidas', line=dict(color='#f85149', width=3)))
-    fig_line.update_layout(margin=dict(t=10, b=10, l=10, r=10), paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', legend=dict(orientation="h"))
-    st.plotly_chart(fig_line, use_container_width=True)
-
-with col_e2:
-    st.markdown("**ASSISTENTE FINANCEIRO**")
-    st.info("✅ Cheque especial zerado.")
-    st.warning("⚠️ Priorize aportes na reserva de emergência.")
-    st.success("💡 Dica: Amortizar R$ 500/mês no empréstimo Itaú economiza juros significativos.")
+    if st.button("🗑️ Limpar Todos os Dados"):
+        st.session_state.lancamentos = pd.DataFrame(columns=["Data", "Descrição", "Valor (R$)", "Tipo", "Forma", "Categoria"])
+        st.rerun()
