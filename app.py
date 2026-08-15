@@ -17,11 +17,14 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- DADOS DOS CARTÕES DE CRÉDITO ---
-CARTÕES_INFO = {
-    "C6 Carbon": {"Fechamento": "Dia 28", "Vencimento": "Dia 05", "Limite": 23300.00},
-    "Itaú Platinum": {"Fechamento": "Dia 03", "Vencimento": "Dia 11", "Limite": 15000.00},
-    "Outros Cartões": {"Fechamento": "Varia", "Vencimento": "Varia", "Limite": 8052.23}
+# --- INFORMAÇÕES DE TODOS OS CARTÕES DE CRÉDITO ---
+CARTÕES_DETALHES = {
+    "Cartão C6 Carbon": "Fechamento: Dia 28 | Vencimento: Dia 05",
+    "Cartão Itaú Platinum": "Fechamento: Dia 03 | Vencimento: Dia 11",
+    "Cartão Sam's Club": "Fechamento: Dia 02 | Vencimento: Dia 10",
+    "Cartão Mercado Pago": "Fechamento: Dia 09 | Vencimento: Dia 17",
+    "Cartão Amazon": "Fechamento: Dia 17 | Vencimento: Dia 25",
+    "Outros Cartões": "Fechamento: Variado | Vencimento: Variado"
 }
 
 # --- MEMÓRIA DA APLICAÇÃO (SESSION STATE) ---
@@ -41,45 +44,44 @@ aba_selecionada = st.sidebar.radio(
 )
 
 # =========================================================
-# ABA 1: CENTRO DE COMANDO (EDITÁVEL E COM CARTÕES)
+# ABA 1: CENTRO DE COMANDO (EDITÁVEL DIRETO NA TELA)
 # =========================================================
 if aba_selecionada == "🏠 Centro de Comando":
     st.title("💼 CENTRAL FINANCEIRA")
-    st.caption("Agosto / 2026 — Controle Editável de Caixa e Metas")
+    st.caption("Ajuste os valores diretamente nas caixas abaixo:")
 
     df = st.session_state.lancamentos
     
-    total_entradas = df[df['Tipo'] == 'Entrada']['Valor (R$)'].sum()
-    total_saidas = df[df['Tipo'] == 'Saída']['Valor (R$)'].sum()
-    saldo_disponivel = total_entradas - total_saidas
+    total_entradas_calc = df[df['Tipo'] == 'Entrada']['Valor (R$)'].sum()
+    total_saidas_calc = df[df['Tipo'] == 'Saída']['Valor (R$)'].sum()
 
-    # Edição Rápida no Centro de Comando
-    with st.expander("✏️ Editar Metas e Valores Gerais do Painel"):
-        col_ed1, col_ed2 = st.columns(2)
-        with col_ed1:
-            meta_reserva = st.number_input("Meta da Reserva (R$)", value=15000.00, step=500.0)
-            reserva_atual = st.number_input("Reserva Atual (R$)", value=1850.00, step=100.0)
-        with col_ed2:
-            limite_c6 = st.number_input("Limite C6 Carbon (R$)", value=23300.00)
-            limite_itau = st.number_input("Limite Itaú Platinum (R$)", value=15000.00)
-
-    # Indicadores
+    # Caixas de Edição Direta na Tela Principal
     c1, c2, c3, c4 = st.columns(4)
     with c1:
-        st.markdown(f'<div class="card"><span class="subtext">SALDO DISPONÍVEL</span><h2 class="positive">R$ {saldo_disponivel:,.2f}</h2></div>', unsafe_allow_html=True)
+        receitas_input = st.number_input("Receitas do Mês (R$)", value=float(total_entradas_calc if total_entradas_calc > 0 else 8820.00), step=100.0)
     with c2:
-        st.markdown(f'<div class="card"><span class="subtext">RECEITAS DO MÊS</span><h2>R$ {total_entradas:,.2f}</h2></div>', unsafe_allow_html=True)
+        despesas_input = st.number_input("Despesas do Mês (R$)", value=float(total_saidas_calc if total_saidas_calc > 0 else 5145.60), step=100.0)
     with c3:
-        st.markdown(f'<div class="card"><span class="subtext">DESPESAS DO MÊS</span><h2 class="negative">R$ {total_saidas:,.2f}</h2></div>', unsafe_allow_html=True)
+        saldo_editavel = st.number_input("Saldo Disponível (R$)", value=float(receitas_input - despesas_input), step=100.0)
     with c4:
-        st.markdown(f'<div class="card"><span class="subtext">SOBRA PREVISTA</span><h2 style="color: #a371f7;">R$ {saldo_disponivel:,.2f}</h2></div>', unsafe_allow_html=True)
+        sobra_editavel = st.number_input("Sobra Prevista (R$)", value=float(receitas_input - despesas_input), step=100.0)
+
+    st.markdown("---")
+
+    # Caixas Editáveis de Metas e Reservas
+    st.markdown("### 🎯 Metas & Reservas")
+    col_m1, col_m2 = st.columns(2)
+    with col_m1:
+        reserva_atual = st.number_input("Reserva Atual (R$)", value=1850.00, step=100.0)
+    with col_m2:
+        meta_reserva = st.number_input("Meta da Reserva (R$)", value=15000.00, step=500.0)
 
     st.markdown("---")
 
     # Gráficos
     col_g1, col_g2 = st.columns(2)
     with col_g1:
-        st.markdown("**GASTOS POR CARTÃO / FORMA DE PAGAMENTO**")
+        st.markdown("**GASTOS POR FORMA DE PAGAMENTO / CARTÃO**")
         df_saidas = df[df['Tipo'] == 'Saída']
         if not df_saidas.empty:
             df_forma = df_saidas.groupby('Forma')['Valor (R$)'].sum().reset_index()
@@ -90,36 +92,35 @@ if aba_selecionada == "🏠 Centro de Comando":
             st.info("Nenhum gasto registrado ainda.")
 
     with col_g2:
-        st.markdown("**DISTRIBUIÇÃO DA RESERVA DE EMERGÊNCIA**")
-        pct_reserva = (reserva_atual / meta_reserva) * 100
-        fig_reserva = go.Figure(data=[go.Pie(labels=['Atingido', 'Falta'], values=[reserva_atual, meta_reserva - reserva_atual], hole=.5, marker_colors=['#d29922', '#21262d'])])
+        st.markdown("**PROGRESSO DA RESERVA DE EMERGÊNCIA**")
+        pct_reserva = (reserva_atual / meta_reserva) * 100 if meta_reserva > 0 else 0
+        fig_reserva = go.Figure(data=[go.Pie(labels=['Atingido', 'Falta'], values=[reserva_atual, max(0.0, meta_reserva - reserva_atual)], hole=.5, marker_colors=['#d29922', '#21262d'])])
         fig_reserva.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
         st.plotly_chart(fig_reserva, use_container_width=True)
         st.caption(f"Meta: R$ {meta_reserva:,.2f} ({pct_reserva:.1f}% concluído)")
 
 # =========================================================
-# ABA 2: TOTAL RECEBIDO NO MÊS (QUINZENAL)
+# ABA 2: TOTAL RECEBIDO NO MÊS
 # =========================================================
 elif aba_selecionada == "💵 Total Recebido (Mês)":
     st.title("💵 Total Recebido do Mês")
-    st.caption("Acompanhamento das Entradas e Recebimentos Quinzenais")
+    st.caption("Acompanhamento dos Recebimentos Quinzenais")
 
     df = st.session_state.lancamentos
     df_entradas = df[df['Tipo'] == 'Entrada'].copy()
-    
     total_recebido = df_entradas['Valor (R$)'].sum()
 
     col_r1, col_r2 = st.columns(2)
     with col_r1:
         st.markdown(f'<div class="card"><span class="subtext">TOTAL ACUMULADO NO MÊS</span><h2 class="positive">R$ {total_recebido:,.2f}</h2></div>', unsafe_allow_html=True)
     with col_r2:
-        st.markdown(f'<div class="card"><span class="subtext">QTD. DE RECEBIMENTOS</span><h2>{len(df_entradas)} Pagamentos</h2></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="card"><span class="subtext">QUANTIDADE DE LANÇAMENTOS</span><h2>{len(df_entradas)} Pagamentos</h2></div>', unsafe_allow_html=True)
 
     st.markdown("### 📋 Detalhamento dos Recebimentos")
     st.dataframe(df_entradas[["Data", "Descrição", "Valor (R$)", "Forma"]], use_container_width=True)
 
 # =========================================================
-# ABA 3: FORMULÁRIO DE LANÇAMENTO
+# ABA 3: FORMULÁRIO DE LANÇAMENTO (TODOS OS CARTÕES)
 # =========================================================
 elif aba_selecionada == "➕ Lançar Gastos":
     st.title("➕ Registrar Novo Lançamento")
@@ -128,26 +129,30 @@ elif aba_selecionada == "➕ Lançar Gastos":
         col_f1, col_f2 = st.columns(2)
         with col_f1:
             data = st.date_input("Data", datetime.now())
-            descricao = st.text_input("Descrição (Ex: Feira, Mercado, Posto)")
+            descricao = st.text_input("Descrição (Ex: Feira, Mercado, Gasolina)")
             valor = st.number_input("Valor (R$)", min_value=0.01, step=5.00, format="%.2f")
         
         with col_f2:
-            tipo = st.selectbox("Tipo", ["Saída", "Entrada"])
-            forma = st.selectbox("Forma de Pagamento", [
-                "Cartão C6 Carbon", 
-                "Cartão Itaú Platinum", 
-                "Outros Cartões", 
-                "Débito", 
-                "Pix", 
+            tipo = st.selectbox("Tipo de Lançamento", ["Saída", "Entrada"])
+            
+            # Lista completa com todos os cartões especificados
+            opcoes_pagamento = [
+                "Cartão C6 Carbon",
+                "Cartão Itaú Platinum",
+                "Cartão Sam's Club",
+                "Cartão Mercado Pago",
+                "Cartão Amazon",
+                "Outros Cartões",
+                "Débito",
+                "Pix",
                 "Dinheiro"
-            ])
+            ]
+            forma = st.selectbox("Forma de Pagamento", opcoes_pagamento)
             categoria = st.selectbox("Categoria", ["Alimentação", "Transporte", "Moradia", "Lazer", "Contas Fixas", "Renda Quinzenal", "Outros"])
 
-        # Informações do Cartão
-        if "C6" in forma:
-            st.info(f"💳 **C6 Carbon:** Fechamento {CARTÕES_INFO['C6 Carbon']['Fechamento']} | Vencimento {CARTÕES_INFO['C6 Carbon']['Vencimento']}")
-        elif "Itaú" in forma:
-            st.info(f"💳 **Itaú Platinum:** Fechamento {CARTÕES_INFO['Itaú Platinum']['Fechamento']} | Vencimento {CARTÕES_INFO['Itaú Platinum']['Vencimento']}")
+        # Exibe automaticamente as datas de fechamento e vencimento do cartão selecionado
+        if forma in CARTÕES_DETALHES:
+            st.info(f"💳 **{forma}:** {CARTÕES_DETALHES[forma]}")
 
         btn_salvar = st.form_submit_button("💾 Salvar Registro")
 
