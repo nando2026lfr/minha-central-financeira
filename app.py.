@@ -1,0 +1,39 @@
+import streamlit as st
+import pandas as pd
+import plotly.graph_objects as go
+
+# Configuração da página para ficar estilo "App"
+st.set_page_config(page_title="Central Financeira", layout="wide")
+
+# Estilo customizado para o tema escuro
+st.markdown("""
+    <style>
+    .stApp { background-color: #0d1117; color: white; }
+    </style>
+    """, unsafe_allow_html=True)
+
+st.title("💰 Central Financeira")
+
+# --- Campos de Edição (Simulando o input de dados) ---
+col1, col2 = st.columns(2)
+with col1:
+    receita = st.number_input("Receita do Mês (R$)", value=8820.00)
+with col2:
+    despesa = st.number_input("Despesas do Mês (R$)", value=5145.60)
+
+# --- Cálculos ---
+saldo = receita - despesa
+
+# --- Visualização (Cards) ---
+c1, c2, c3, c4 = st.columns(4)
+c1.metric("Saldo", f"R$ {saldo:,.2f}")
+c2.metric("Receita", f"R$ {receita:,.2f}")
+c3.metric("Despesa", f"R$ {despesa:,.2f}")
+c4.metric("Sobra", f"R$ {receita - despesa:,.2f}")
+
+# --- Exemplo de Gráfico Interativo ---
+fig = go.Figure(data=[go.Pie(labels=['Receitas', 'Despesas'], values=[receita, despesa], hole=.4)])
+fig.update_layout(title="Distribuição", template="plotly_dark")
+st.plotly_chart(fig, use_container_width=True)
+
+st.success("Painel atualizado em tempo real!")
