@@ -74,10 +74,20 @@ if 'despesas_fixas' not in st.session_state:
         {"Local": "Geral", "Descrição": "Lazer (Estimado)", "Valor (R$)": 300.00, "Vencimento": "Mensal", "Status": "🔴 Em Aberto"}
     ])
 
+# --- HISTÓRICO EXATO DE PARCELAS DETALHADAS ---
 if 'parcelados' not in st.session_state:
     st.session_state.parcelados = pd.DataFrame([
-        {"Item / Compra": "Smartphone", "Cartão": "Cartão Itaú Black", "Valor Parcela (R$)": 250.00, "Parcela Atual": 5, "Total Parcelas": 10, "Mês Término": "12/2026"},
-        {"Item / Compra": "Eletrodoméstico", "Cartão": "Cartão C6 Carbon", "Valor Parcela (R$)": 180.00, "Parcela Atual": 3, "Total Parcelas": 6, "Mês Término": "11/2026"}
+        # C6 Carbon
+        {"Item / Compra": "Pneus", "Cartão": "Cartão C6 Carbon", "Valor Parcela (R$)": 165.80, "Parcela Atual": 8, "Total Parcelas": 10, "Mês Término": "10/2026"},
+        {"Item / Compra": "Despesas CNPJ", "Cartão": "Cartão C6 Carbon", "Valor Parcela (R$)": 825.48, "Parcela Atual": 2, "Total Parcelas": 12, "Mês Término": "06/2027"},
+
+        # Itaú Black
+        {"Item / Compra": "Seguro Jeep", "Cartão": "Cartão Itaú Black", "Valor Parcela (R$)": 231.80, "Parcela Atual": 6, "Total Parcelas": 10, "Mês Término": "12/2026"},
+
+        # Mercado Pago
+        {"Item / Compra": "Compra MP #1", "Cartão": "Cartão Mercado Pago", "Valor Parcela (R$)": 141.61, "Parcela Atual": 6, "Total Parcelas": 18, "Mês Término": "08/2027"},
+        {"Item / Compra": "Compra MP #2", "Cartão": "Cartão Mercado Pago", "Valor Parcela (R$)": 121.37, "Parcela Atual": 13, "Total Parcelas": 18, "Mês Término": "01/2027"},
+        {"Item / Compra": "Compra MP #3", "Cartão": "Cartão Mercado Pago", "Valor Parcela (R$)": 85.66, "Parcela Atual": 14, "Total Parcelas": 21, "Mês Término": "03/2027"}
     ])
 
 # --- NAVEGAÇÃO POR ABAS ---
@@ -233,15 +243,15 @@ elif aba_selecionada == "🏢 Despesas Fixas (Apto / Casa)":
             st.rerun()
 
 # =========================================================
-# ABA 4: COMPRAS PARCELADAS DOS CARTÕES
+# ABA 4: COMPRAS PARCELADAS DOS CARTÕES DETALHADAS
 # =========================================================
 elif aba_selecionada == "💳 Compras Parceladas":
-    st.title("💳 Acompanhamento de Parcelados")
-    st.caption("Controle o término de cada parcela nos seus cartões de crédito")
+    st.title("💳 Acompanhamento de Parcelados por Cartão")
+    st.caption("Visão individualizada de cada compra parcelada, com cálculo de término e valor restante")
 
     df_p = st.session_state.parcelados
 
-    # Cálculos
+    # Cálculos dinâmicos
     if not df_p.empty:
         df_p["Faltam (Parcelas)"] = df_p["Total Parcelas"] - df_p["Parcela Atual"]
         df_p["Saldo Restante (R$)"] = df_p["Faltam (Parcelas)"] * df_p["Valor Parcela (R$)"]
@@ -258,7 +268,7 @@ elif aba_selecionada == "💳 Compras Parceladas":
         st.markdown(f'<div class="card"><span class="subtext">SALDO DEVEDOR TOTAL A QUITAR</span><h2 class="warning">R$ {total_comprometido:,.2f}</h2></div>', unsafe_allow_html=True)
 
     st.markdown("---")
-    st.markdown("### 📋 Gerenciar Compras Parceladas")
+    st.markdown("### 📋 Tabela de Compras Parceladas")
 
     df_p_editado = st.data_editor(
         df_p,
@@ -268,7 +278,7 @@ elif aba_selecionada == "💳 Compras Parceladas":
             "Valor Parcela (R$)": st.column_config.NumberColumn("Valor Parcela (R$)", format="R$ %.2f", required=True),
             "Parcela Atual": st.column_config.NumberColumn("Parcela Atual", min_value=1, required=True),
             "Total Parcelas": st.column_config.NumberColumn("Total Parcelas", min_value=1, required=True),
-            "Mês Término": st.column_config.TextColumn("Mês/Ano Término (Ex: 11/2026)", required=True),
+            "Mês Término": st.column_config.TextColumn("Mês/Ano Término", required=True),
             "Faltam (Parcelas)": st.column_config.NumberColumn("Faltam", disabled=True),
             "Saldo Restante (R$)": st.column_config.NumberColumn("Saldo Restante", format="R$ %.2f", disabled=True)
         },
@@ -283,7 +293,7 @@ elif aba_selecionada == "💳 Compras Parceladas":
     with st.form("form_parcelado", clear_on_submit=True):
         col_p1, col_p2 = st.columns(2)
         with col_p1:
-            item_p = st.text_input("Descrição do Item (Ex: Celular, Pneu, TV)")
+            item_p = st.text_input("Descrição do Item (Ex: Celular, Pneu, Ferramenta)")
             cartao_p = st.selectbox("Cartão Utilizado", LISTA_CARTÕES)
             valor_p = st.number_input("Valor da Parcela (R$)", min_value=0.01, step=10.0, format="%.2f")
         with col_p2:
@@ -341,7 +351,7 @@ elif aba_selecionada == "➕ Lançar Gastos":
             st.success(f"Lançamento '{descricao}' de R$ {valor:.2f} registrado com sucesso!")
 
 # =========================================================
-# ABA 6: HISTÓRICO COMPLETO COM STATUS EDITÁVEL DE CARTÕES
+# ABA 6: HISTÓRICO COMPLETO
 # =========================================================
 elif aba_selecionada == "📋 Histórico de Lançamentos":
     st.title("📋 Histórico Geral de Lançamentos & Cartões")
