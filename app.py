@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 from datetime import datetime
+import os
 
 # Configuração da Página
 st.set_page_config(page_title="Central Financeira", layout="wide", initial_sidebar_state="expanded")
@@ -26,73 +27,82 @@ LISTA_CARTÕES = [
     "Cartão Sam's Club",
     "Cartão Mercado Pago",
     "Cartão Amazon",
-    "Outros Cartões"
+    "Outros CartÕES"
 ]
 
-# --- DADOS DETALHADOS REAIS (SESSION STATE) ---
+# --- FUNÇÕES DE PERSISTÊNCIA EM CSV ---
+ARQUIVO_LANCAMENTOS = "dados_lancamentos.csv"
+ARQUIVO_FIXAS = "dados_despesas_fixas.csv"
+ARQUIVO_PARCELADOS = "dados_parcelados.csv"
+
+def carregar_dados(caminho, df_padrao):
+    if os.path.exists(caminho):
+        try:
+            return pd.read_csv(caminho)
+        except Exception:
+            return df_padrao
+    else:
+        df_padrao.to_csv(caminho, index=False)
+        return df_padrao
+
+def salvar_dados(df, caminho):
+    df.to_csv(caminho, index=False)
+
+# --- DADOS PADRÃO INICIAIS ---
+df_lancamentos_padrao = pd.DataFrame([
+    {"Data": "2026-08-01", "Descrição": "Adiantamento Quinzenal (1º Pagamento)", "Valor (R$)": 4410.00, "Tipo": "Entrada", "Forma": "Pix", "Categoria": "Renda Quinzenal", "Status": "🟢 Pago"},
+    {"Data": "2026-08-15", "Descrição": "Salário Quinzenal (2º Pagamento)", "Valor (R$)": 4410.00, "Tipo": "Entrada", "Forma": "Pix", "Categoria": "Renda Quinzenal", "Status": "🟢 Pago"},
+    {"Data": "2026-08-10", "Descrição": "Fatura Itaú Black", "Valor (R$)": 850.00, "Tipo": "Saída", "Forma": "Cartão Itaú Black", "Categoria": "Cartão de Crédito", "Status": "🔴 Em Aberto"},
+    {"Data": "2026-08-10", "Descrição": "Fatura C6 Carbon", "Valor (R$)": 1727.66, "Tipo": "Saída", "Forma": "Cartão C6 Carbon", "Categoria": "Cartão de Crédito", "Status": "🔴 Em Aberto"},
+    {"Data": "2026-08-10", "Descrição": "Fatura Itaú Platinum", "Valor (R$)": 710.00, "Tipo": "Saída", "Forma": "Cartão Itaú Platinum", "Categoria": "Cartão de Crédito", "Status": "🔴 Em Aberto"},
+    {"Data": "2026-08-10", "Descrição": "Fatura Sam's Club", "Valor (R$)": 450.00, "Tipo": "Saída", "Forma": "Cartão Sam's Club", "Categoria": "Cartão de Crédito", "Status": "🔴 Em Aberto"},
+    {"Data": "2026-08-10", "Descrição": "Fatura Mercado Pago", "Valor (R$)": 629.38, "Tipo": "Saída", "Forma": "Cartão Mercado Pago", "Categoria": "Cartão de Crédito", "Status": "🔴 Em Aberto"},
+    {"Data": "2026-08-10", "Descrição": "Fatura Amazon", "Valor (R$)": 380.00, "Tipo": "Saída", "Forma": "Cartão Amazon", "Categoria": "Cartão de Crédito", "Status": "🔴 Em Aberto"},
+    {"Data": "2026-08-10", "Descrição": "Outros Cartões", "Valor (R$)": 375.75, "Tipo": "Saída", "Forma": "Outros Cartões", "Categoria": "Cartão de Crédito", "Status": "🔴 Em Aberto"}
+])
+
+df_fixas_padrao = pd.DataFrame([
+    {"Local": "Apto", "Descrição": "Condomínio Apto", "Valor (R$)": 429.00, "Vencimento": "Dia 10", "Status": "🔴 Em Aberto"},
+    {"Local": "Apto", "Descrição": "Seguro Apto", "Valor (R$)": 104.77, "Vencimento": "Dia 10", "Status": "🔴 Em Aberto"},
+    {"Local": "Apto", "Descrição": "Internet Apto", "Valor (R$)": 99.90, "Vencimento": "Dia 15", "Status": "🔴 Em Aberto"},
+    {"Local": "Apto", "Descrição": "Energia Apto", "Valor (R$)": 72.00, "Vencimento": "Dia 15", "Status": "🔴 Em Aberto"},
+    {"Local": "Apto", "Descrição": "IPTU Apto", "Valor (R$)": 33.33, "Vencimento": "Dia 20", "Status": "🔴 Em Aberto"},
+    {"Local": "Casa", "Descrição": "Internet Casa", "Valor (R$)": 99.90, "Vencimento": "Dia 10", "Status": "🔴 Em Aberto"},
+    {"Local": "Casa", "Descrição": "Energia Casa", "Valor (R$)": 96.00, "Vencimento": "Dia 15", "Status": "🔴 Em Aberto"},
+    {"Local": "Casa", "Descrição": "Água Casa", "Valor (R$)": 90.00, "Vencimento": "Dia 15", "Status": "🔴 Em Aberto"},
+    {"Local": "Geral", "Descrição": "Curso de Inglês", "Valor (R$)": 293.40, "Vencimento": "Dia 05", "Status": "🔴 Em Aberto"},
+    {"Local": "Geral", "Descrição": "Seguro Carro", "Valor (R$)": 231.80, "Vencimento": "Dia 10", "Status": "🔴 Em Aberto"},
+    {"Local": "Geral", "Descrição": "CREA", "Valor (R$)": 118.00, "Vencimento": "Dia 10", "Status": "🔴 Em Aberto"},
+    {"Local": "Geral", "Descrição": "Plano Funerário", "Valor (R$)": 92.26, "Vencimento": "Dia 10", "Status": "🔴 Em Aberto"},
+    {"Local": "Geral", "Descrição": "Vivo (Telefonia)", "Valor (R$)": 86.00, "Vencimento": "Dia 15", "Status": "🔴 Em Aberto"},
+    {"Local": "Geral", "Descrição": "Netflix", "Valor (R$)": 59.90, "Vencimento": "Dia 20", "Status": "🔴 Em Aberto"},
+    {"Local": "Geral", "Descrição": "Amazon Prime", "Valor (R$)": 13.90, "Vencimento": "Dia 20", "Status": "🔴 Em Aberto"},
+    {"Local": "Geral", "Descrição": "Mercado (Estimado)", "Valor (R$)": 1000.00, "Vencimento": "Mensal", "Status": "🔴 Em Aberto"},
+    {"Local": "Geral", "Descrição": "Lazer (Estimado)", "Valor (R$)": 300.00, "Vencimento": "Mensal", "Status": "🔴 Em Aberto"}
+])
+
+df_parcelados_padrao = pd.DataFrame([
+    {"Item / Compra": "Parcela 1 (Última 🎉)", "Cartão": "Cartão Mercado Pago", "Valor Parcela (R$)": 107.47, "Parcela Atual": 4, "Total Parcelas": 4, "Mês Término": "08/2026"},
+    {"Item / Compra": "Parcela 2", "Cartão": "Cartão Mercado Pago", "Valor Parcela (R$)": 141.61, "Parcela Atual": 6, "Total Parcelas": 18, "Mês Término": "08/2027"},
+    {"Item / Compra": "Parcela 3", "Cartão": "Cartão Mercado Pago", "Valor Parcela (R$)": 82.80, "Parcela Atual": 12, "Total Parcelas": 21, "Mês Término": "05/2027"},
+    {"Item / Compra": "Parcela 4", "Cartão": "Cartão Mercado Pago", "Valor Parcela (R$)": 90.47, "Parcela Atual": 13, "Total Parcelas": 21, "Mês Término": "04/2027"},
+    {"Item / Compra": "Parcela 5", "Cartão": "Cartão Mercado Pago", "Valor Parcela (R$)": 121.37, "Parcela Atual": 13, "Total Parcelas": 18, "Mês Término": "01/2027"},
+    {"Item / Compra": "Parcela 6", "Cartão": "Cartão Mercado Pago", "Valor Parcela (R$)": 85.66, "Parcela Atual": 14, "Total Parcelas": 21, "Mês Término": "03/2027"},
+    {"Item / Compra": "Pneus", "Cartão": "Cartão C6 Carbon", "Valor Parcela (R$)": 165.80, "Parcela Atual": 8, "Total Parcelas": 10, "Mês Término": "10/2026"},
+    {"Item / Compra": "Despesas CNPJ", "Cartão": "Cartão C6 Carbon", "Valor Parcela (R$)": 825.48, "Parcela Atual": 2, "Total Parcelas": 12, "Mês Término": "06/2027"},
+    {"Item / Compra": "Revisão Jeep", "Cartão": "Cartão C6 Carbon", "Valor Parcela (R$)": 736.38, "Parcela Atual": 4, "Total Parcelas": 4, "Mês Término": "08/2026"},
+    {"Item / Compra": "Seguro Jeep", "Cartão": "Cartão Itaú Black", "Valor Parcela (R$)": 231.80, "Parcela Atual": 6, "Total Parcelas": 10, "Mês Término": "12/2026"}
+])
+
+# INITIALIZAÇÃO NO SESSION STATE A PARTIR DOS ARQUIVOS CSV
 if 'lancamentos' not in st.session_state:
-    st.session_state.lancamentos = pd.DataFrame([
-        # Receitas Quinzenais
-        {"Data": "2026-08-01", "Descrição": "Adiantamento Quinzenal (1º Pagamento)", "Valor (R$)": 4410.00, "Tipo": "Entrada", "Forma": "Pix", "Categoria": "Renda Quinzenal", "Status": "🟢 Pago"},
-        {"Data": "2026-08-15", "Descrição": "Salário Quinzenal (2º Pagamento)", "Valor (R$)": 4410.00, "Tipo": "Entrada", "Forma": "Pix", "Categoria": "Renda Quinzenal", "Status": "🟢 Pago"},
-        
-        # Faturas dos Cartões de Crédito
-        {"Data": "2026-08-10", "Descrição": "Fatura Itaú Black", "Valor (R$)": 850.00, "Tipo": "Saída", "Forma": "Cartão Itaú Black", "Categoria": "Cartão de Crédito", "Status": "🔴 Em Aberto"},
-        {"Data": "2026-08-10", "Descrição": "Fatura C6 Carbon", "Valor (R$)": 1727.66, "Tipo": "Saída", "Forma": "Cartão C6 Carbon", "Categoria": "Cartão de Crédito", "Status": "🔴 Em Aberto"},
-        {"Data": "2026-08-10", "Descrição": "Fatura Itaú Platinum", "Valor (R$)": 710.00, "Tipo": "Saída", "Forma": "Cartão Itaú Platinum", "Categoria": "Cartão de Crédito", "Status": "🔴 Em Aberto"},
-        {"Data": "2026-08-10", "Descrição": "Fatura Sam's Club", "Valor (R$)": 450.00, "Tipo": "Saída", "Forma": "Cartão Sam's Club", "Categoria": "Cartão de Crédito", "Status": "🔴 Em Aberto"},
-        {"Data": "2026-08-10", "Descrição": "Fatura Mercado Pago", "Valor (R$)": 629.38, "Tipo": "Saída", "Forma": "Cartão Mercado Pago", "Categoria": "Cartão de Crédito", "Status": "🔴 Em Aberto"},
-        {"Data": "2026-08-10", "Descrição": "Fatura Amazon", "Valor (R$)": 380.00, "Tipo": "Saída", "Forma": "Cartão Amazon", "Categoria": "Cartão de Crédito", "Status": "🔴 Em Aberto"},
-        {"Data": "2026-08-10", "Descrição": "Outros Cartões", "Valor (R$)": 375.75, "Tipo": "Saída", "Forma": "Outros Cartões", "Categoria": "Cartão de Crédito", "Status": "🔴 Em Aberto"}
-    ])
+    st.session_state.lancamentos = carregar_dados(ARQUIVO_LANCAMENTOS, df_lancamentos_padrao)
 
 if 'despesas_fixas' not in st.session_state:
-    st.session_state.despesas_fixas = pd.DataFrame([
-        # Apartamento
-        {"Local": "Apto", "Descrição": "Condomínio Apto", "Valor (R$)": 429.00, "Vencimento": "Dia 10", "Status": "🔴 Em Aberto"},
-        {"Local": "Apto", "Descrição": "Seguro Apto", "Valor (R$)": 104.77, "Vencimento": "Dia 10", "Status": "🔴 Em Aberto"},
-        {"Local": "Apto", "Descrição": "Internet Apto", "Valor (R$)": 99.90, "Vencimento": "Dia 15", "Status": "🔴 Em Aberto"},
-        {"Local": "Apto", "Descrição": "Energia Apto", "Valor (R$)": 72.00, "Vencimento": "Dia 15", "Status": "🔴 Em Aberto"},
-        {"Local": "Apto", "Descrição": "IPTU Apto", "Valor (R$)": 33.33, "Vencimento": "Dia 20", "Status": "🔴 Em Aberto"},
+    st.session_state.despesas_fixas = carregar_dados(ARQUIVO_FIXAS, df_fixas_padrao)
 
-        # Casa
-        {"Local": "Casa", "Descrição": "Internet Casa", "Valor (R$)": 99.90, "Vencimento": "Dia 10", "Status": "🔴 Em Aberto"},
-        {"Local": "Casa", "Descrição": "Energia Casa", "Valor (R$)": 96.00, "Vencimento": "Dia 15", "Status": "🔴 Em Aberto"},
-        {"Local": "Casa", "Descrição": "Água Casa", "Valor (R$)": 90.00, "Vencimento": "Dia 15", "Status": "🔴 Em Aberto"},
-
-        # Compromissos e Contas Fixas Gerais
-        {"Local": "Geral", "Descrição": "Curso de Inglês", "Valor (R$)": 293.40, "Vencimento": "Dia 05", "Status": "🔴 Em Aberto"},
-        {"Local": "Geral", "Descrição": "Seguro Carro", "Valor (R$)": 231.80, "Vencimento": "Dia 10", "Status": "🔴 Em Aberto"},
-        {"Local": "Geral", "Descrição": "CREA", "Valor (R$)": 118.00, "Vencimento": "Dia 10", "Status": "🔴 Em Aberto"},
-        {"Local": "Geral", "Descrição": "Plano Funerário", "Valor (R$)": 92.26, "Vencimento": "Dia 10", "Status": "🔴 Em Aberto"},
-        {"Local": "Geral", "Descrição": "Vivo (Telefonia)", "Valor (R$)": 86.00, "Vencimento": "Dia 15", "Status": "🔴 Em Aberto"},
-        {"Local": "Geral", "Descrição": "Netflix", "Valor (R$)": 59.90, "Vencimento": "Dia 20", "Status": "🔴 Em Aberto"},
-        {"Local": "Geral", "Descrição": "Amazon Prime", "Valor (R$)": 13.90, "Vencimento": "Dia 20", "Status": "🔴 Em Aberto"},
-
-        # Estimativas Mensais de Rotina
-        {"Local": "Geral", "Descrição": "Mercado (Estimado)", "Valor (R$)": 1000.00, "Vencimento": "Mensal", "Status": "🔴 Em Aberto"},
-        {"Local": "Geral", "Descrição": "Lazer (Estimado)", "Valor (R$)": 300.00, "Vencimento": "Mensal", "Status": "🔴 Em Aberto"}
-    ])
-
-# --- HISTÓRICO EXATO DE PARCELAS DOS CARTÕES ---
 if 'parcelados' not in st.session_state:
-    st.session_state.parcelados = pd.DataFrame([
-        # MERCADO PAGO (COMPLETO)
-        {"Item / Compra": "Parcela 1 (Última 🎉)", "Cartão": "Cartão Mercado Pago", "Valor Parcela (R$)": 107.47, "Parcela Atual": 4, "Total Parcelas": 4, "Mês Término": "08/2026"},
-        {"Item / Compra": "Parcela 2", "Cartão": "Cartão Mercado Pago", "Valor Parcela (R$)": 141.61, "Parcela Atual": 6, "Total Parcelas": 18, "Mês Término": "08/2027"},
-        {"Item / Compra": "Parcela 3", "Cartão": "Cartão Mercado Pago", "Valor Parcela (R$)": 82.80, "Parcela Atual": 12, "Total Parcelas": 21, "Mês Término": "05/2027"},
-        {"Item / Compra": "Parcela 4", "Cartão": "Cartão Mercado Pago", "Valor Parcela (R$)": 90.47, "Parcela Atual": 13, "Total Parcelas": 21, "Mês Término": "04/2027"},
-        {"Item / Compra": "Parcela 5", "Cartão": "Cartão Mercado Pago", "Valor Parcela (R$)": 121.37, "Parcela Atual": 13, "Total Parcelas": 18, "Mês Término": "01/2027"},
-        {"Item / Compra": "Parcela 6", "Cartão": "Cartão Mercado Pago", "Valor Parcela (R$)": 85.66, "Parcela Atual": 14, "Total Parcelas": 21, "Mês Término": "03/2027"},
-
-        # C6 CARBON (COMPLETO)
-        {"Item / Compra": "Pneus", "Cartão": "Cartão C6 Carbon", "Valor Parcela (R$)": 165.80, "Parcela Atual": 8, "Total Parcelas": 10, "Mês Término": "10/2026"},
-        {"Item / Compra": "Despesas CNPJ", "Cartão": "Cartão C6 Carbon", "Valor Parcela (R$)": 825.48, "Parcela Atual": 2, "Total Parcelas": 12, "Mês Término": "06/2027"},
-        {"Item / Compra": "Revisão Jeep", "Cartão": "Cartão C6 Carbon", "Valor Parcela (R$)": 736.38, "Parcela Atual": 4, "Total Parcelas": 4, "Mês Término": "08/2026"},
-
-        # ITAÚ BLACK (COMPLETO)
-        {"Item / Compra": "Seguro Jeep", "Cartão": "Cartão Itaú Black", "Valor Parcela (R$)": 231.80, "Parcela Atual": 6, "Total Parcelas": 10, "Mês Término": "12/2026"}
-    ])
+    st.session_state.parcelados = carregar_dados(ARQUIVO_PARCELADOS, df_parcelados_padrao)
 
 # --- NAVEGAÇÃO POR ABAS ---
 st.sidebar.title("📌 Menu Principal")
@@ -219,7 +229,9 @@ elif aba_selecionada == "🏢 Despesas Fixas (Apto / Casa)":
         use_container_width=True
     )
 
-    st.session_state.despesas_fixas = df_editado
+    if not df_editado.equals(st.session_state.despesas_fixas):
+        st.session_state.despesas_fixas = df_editado
+        salvar_dados(df_editado, ARQUIVO_FIXAS)
 
     st.markdown("---")
     st.markdown("### ➕ Adicionar Nova Despesa Fixa")
@@ -243,7 +255,8 @@ elif aba_selecionada == "🏢 Despesas Fixas (Apto / Casa)":
                 "Status": status_novo
             }
             st.session_state.despesas_fixas = pd.concat([st.session_state.despesas_fixas, pd.DataFrame([nova_fixa])], ignore_index=True)
-            st.success(f"Despesa fixa '{desc_nova}' adicionada com sucesso!")
+            salvar_dados(st.session_state.despesas_fixas, ARQUIVO_FIXAS)
+            st.success(f"Despesa fixa '{desc_nova}' adicionada e salva com sucesso!")
             st.rerun()
 
 # =========================================================
@@ -289,7 +302,9 @@ elif aba_selecionada == "💳 Compras Parceladas":
         use_container_width=True
     )
 
-    st.session_state.parcelados = df_p_editado
+    if not df_p_editado.equals(st.session_state.parcelados):
+        st.session_state.parcelados = df_p_editado
+        salvar_dados(df_p_editado, ARQUIVO_PARCELADOS)
 
     st.markdown("---")
     st.markdown("### ➕ Cadastrar Nova Compra Parcelada")
@@ -315,6 +330,7 @@ elif aba_selecionada == "💳 Compras Parceladas":
                 "Mês Término": termino_p
             }
             st.session_state.parcelados = pd.concat([st.session_state.parcelados, pd.DataFrame([novo_p])], ignore_index=True)
+            salvar_dados(st.session_state.parcelados, ARQUIVO_PARCELADOS)
             st.success(f"Parcelamento '{item_p}' salvo com sucesso!")
             st.rerun()
 
@@ -351,14 +367,15 @@ elif aba_selecionada == "➕ Lançar Gastos":
                 "Status": status_lanc
             }
             st.session_state.lancamentos = pd.concat([st.session_state.lancamentos, pd.DataFrame([novo_item])], ignore_index=True)
-            st.success(f"Lançamento '{descricao}' de R$ {valor:.2f} registrado com sucesso!")
+            salvar_dados(st.session_state.lancamentos, ARQUIVO_LANCAMENTOS)
+            st.success(f"Lançamento '{descricao}' registrado e salvo no arquivo!")
 
 # =========================================================
 # ABA 6: HISTÓRICO COMPLETO
 # =========================================================
 elif aba_selecionada == "📋 Histórico de Lançamentos":
     st.title("📋 Histórico Geral de Lançamentos & Cartões")
-    st.caption("Altere o status das faturas dos cartões de 🔴 Em Aberto para 🟢 Pago diretamente na tabela abaixo:")
+    st.caption("Altere o status das faturas dos cartões diretamente na tabela abaixo:")
 
     df_hist = st.session_state.lancamentos.sort_values(by="Data", ascending=False)
     
@@ -377,8 +394,11 @@ elif aba_selecionada == "📋 Histórico de Lançamentos":
         use_container_width=True
     )
 
-    st.session_state.lancamentos = df_hist_editado
+    if not df_hist_editado.equals(st.session_state.lancamentos):
+        st.session_state.lancamentos = df_hist_editado
+        salvar_dados(df_hist_editado, ARQUIVO_LANCAMENTOS)
 
     if st.button("🗑️ Limpar Todos os Lançamentos"):
         st.session_state.lancamentos = pd.DataFrame(columns=["Data", "Descrição", "Valor (R$)", "Tipo", "Forma", "Categoria", "Status"])
+        salvar_dados(st.session_state.lancamentos, ARQUIVO_LANCAMENTOS)
         st.rerun()
